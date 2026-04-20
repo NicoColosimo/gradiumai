@@ -1,0 +1,353 @@
+/* =========================
+   GLOBAL
+========================= */
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  margin: 0;
+  background: linear-gradient(180deg, #f5f7fb, #eef2ff);
+  color: #333;
+}
+
+/* =========================
+   HEADER (STUDENT - FIXED MATCH TO TEACHER STYLE)
+========================= */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  /* GREEN + DARK GREEN GRADIENT */
+  background: linear-gradient(135deg, #14532d, #166534, #0f3d20);
+
+  padding: 10px 20px;
+
+  /* subtle depth */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  position: relative;
+  overflow: hidden;
+}
+
+/* HEADER TITLE */
+.header h1 {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: white;
+
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* LOGO (same behavior as teacher) */
+.logo {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+/* optional hover polish */
+.header:hover .logo {
+  transform: scale(1.05);
+  transition: 0.2s ease;
+}
+
+/* optional subtle shine effect */
+.header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+  animation: shine 6s infinite linear;
+
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% { left: -75%; }
+  100% { left: 125%; }
+}
+
+/* =========================
+   USER INFO
+========================= */
+#userInfo {
+  padding: 10px 20px;
+  background: #ecfdf5; /* light green tint */
+  font-size: 14px;
+}
+
+/* =========================
+   TABS
+========================= */
+.tab {
+  cursor: pointer;
+  padding: 10px 18px;
+  background: #e5e7eb;
+  margin-right: 5px;
+  display: inline-block;
+  border-radius: 8px 8px 0 0;
+  transition: 0.2s;
+}
+
+.tab:hover {
+  background: #d1fae5; /* green hover tint */
+}
+
+.tab.active {
+  background: white;
+  border-bottom: 2px solid white;
+  font-weight: 600;
+  color: #14532d;
+}
+
+/* =========================
+   CONTENT CONTAINERS (GLASS UI)
+========================= */
+.tab-content {
+  display: none;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  margin: 20px;
+  border-radius: 12px;
+
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.tab-content.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================
+   INPUTS / SELECTS
+========================= */
+select, input, button {
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: #14532d; /* GREEN */
+  box-shadow: 0 0 0 2px rgba(20,83,45,0.2);
+}
+
+/* =========================
+   BUTTONS (GREEN + GOLD THEME)
+========================= */
+button {
+  background: #14532d; /* green */
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover {
+  background: #166534;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Ripple (unchanged) */
+button::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: rgba(234, 179, 8, 0.4); /* GOLD ripple */
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+}
+
+button:active::after {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(2);
+  transition: transform 0.4s, opacity 0.4s;
+}
+
+/* =========================
+   TABLES
+========================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+th {
+  background: #14532d; /* GREEN */
+  color: #eab308; /* GOLD text */
+  text-align: left;
+  padding: 10px;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  transition: 0.2s;
+}
+
+tr:hover {
+  background: #ecfdf5; /* light green hover */
+  transform: scale(1.01);
+}
+
+/* =========================
+   FEEDBACK BOX
+========================= */
+#feedbackArea {
+  margin-top: 15px;
+  padding: 15px;
+  background: #ecfdf5;
+  border-left: 4px solid #14532d;
+  border-radius: 6px;
+  animation: fadeIn 0.4s ease;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* =========================
+   TOP HEADER WITH LOGO
+========================= */
+.header-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #14532d, #166534);
+}
+
+/* override default h1 spacing inside bar */
+.header-bar h1 {
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+  color: white;
+}
+
+/* LOGO STYLE */
+.login-logo {
+  width: 160px;
+  max-width: 80%;
+  height: auto;
+
+  object-fit: contain;
+
+  background: white;
+  border-radius: 20px;
+  padding: 6px;
+
+  box-shadow: 0 0 18px rgba(234, 179, 8, 0.55);
+  margin-bottom: 10px;
+}/* =========================
+   LOGIN CARD HEADER
+========================= */
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* FIXED LOGO (no squish, better spacing) */
+.login-logo {
+  width: 350px;
+  height: 200px;
+  object-fit: contain;
+
+  background: white;
+  border-radius: 20px;
+  padding: 6px;
+
+  box-shadow: 0 0 18px rgba(234, 179, 8, 0.55);
+  margin-bottom: 12px;
+}
+
+/* LOGIN TITLE */
+.login-header h2 {
+  margin: 0;
+  color: #14532d; /* green */
+  font-size: 20px;
+}
+/* =========================
+   HEADER WITH LOGO
+========================= */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #0f766e, #facc15); /* green + gold */
+  padding: 10px 20px;
+}
+
+.header h1 {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: white;
+}
+
+/* LOGO */
+.logo {
+  width: 55px;
+  height: 55px;
+  object-fit: contain;
+}
+
+/* optional hover polish */
+.header:hover .logo {
+  transform: scale(1.05);
+  transition: 0.2s ease;
+}

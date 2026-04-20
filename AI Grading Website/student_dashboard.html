@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="gradium logo.png">
+  <title>Student Dashboard</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    .tab { cursor: pointer; padding: 6px 10px; background: #eee; margin-right: 5px; display: inline-block; }
+    .tab.active { background: #ccc; }
+    .tab-content { display: none; margin-top: 20px; }
+    .tab-content.active { display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #000; padding: 5px; }
+  </style>
+</head>
+
+<body>
+
+<div class="header">
+  <img src="gradium logo-Picsart-BackgroundRemover.png" class="logo">
+  <h1>Student Dashboard</h1>
+</div>
+<p id="userInfo"></p>
+
+<div>
+  <span class="tab active" data-tab="submission">Submit Homework</span>
+  <span class="tab" data-tab="grades">My Grades</span>
+</div>
+
+<!-- ================= SUBMISSION ================= -->
+<div id="submission" class="tab-content active">
+  <h2>Submit Homework</h2>
+
+  <form id="submissionForm">
+
+    <button type="button" id="loadAssignmentsBtn">
+      Load Assignments
+    </button>
+
+    <br><br>
+
+    <select id="assignmentSelect" required>
+      <option>Click "Load Assignments"</option>
+    </select>
+
+    <br><br>
+
+    <button type="button" id="sendAssignmentBtn">
+      Send Assignment ID
+    </button>
+
+    <br><br>
+
+    <input type="file" id="submissionFile" accept=".pdf" required>
+
+    <br><br>
+
+    <button type="button" id="submitFileBtn">
+      Submit File
+    </button>
+
+  </form>
+
+  <h3>Feedback</h3>
+  <div id="feedbackArea"></div>
+</div>
+
+<!-- ================= GRADES ================= -->
+<div id="grades" class="tab-content">
+  <h2>My Grades</h2>
+
+  <button id="loadGrades">Load Grades</button>
+
+  <table id="gradesTable">
+    <tr>
+      <th>Assignment</th>
+      <th>Total</th>
+      <th>Confidence</th>
+      <th>Feedback</th>
+    </tr>
+  </table>
+</div>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEEc-ioIzOyw5CWHQlC4wCZRSXWCQDaX0",
+  authDomain: "ai-grader-5a3e0.firebaseapp.com",
+  projectId: "ai-grader-5a3e0",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => console.log("Auth persistence enabled"))
+  .catch(err => console.error(err));
+
+let currentUser = null;
+
+// 🔥 STATE
+let currentAssignmentId = null;
+let currentClassId = null;
+
+const BASE = "https://nicocolosimo.app.n8n.cloud/webhook/student";
+const SUBMIT_BASE = "https://nicocolosimo.app.n8n.cloud/webhook/submit-homework";
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  currentUser = user;
+
+  document.getElementById("userInfo").innerText =
+    "Logged in as: " + user.email;
+});
+
+/* ================= TABS ================= */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
+
+/* ================= TOKEN ================= */
+async function getToken() {
+  return await currentUser.getIdToken();
+}
+
+/* ================= LOAD ASSIGNMENTS ================= */
+document.getElementById("loadAssignmentsBtn").addEventListener("click", async () => {
+  const dropdown = document.getElementById("assignmentSelect");
+
+  try {
+    const token = await getToken();
+
+    const res = await fetch(BASE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        action: "get_student_assignments",
+        uid: currentUser.uid
+      })
+    });
+
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+
+    // 🔥 normalize safely
+    const assignments = Array.isArray(data)
+      ? data
+      : (Array.isArray(data?.rows) ? data.rows : []);
+
+    dropdown.innerHTML = "";
+
+    // 🔥 HANDLE NO RESPONSE / EMPTY
+    if (!assignments || assignments.length === 0) {
+      dropdown.innerHTML = `<option>No assignments 🎉</option>`;
+      return;
+    }
+
+    assignments.forEach(a => {
+      const opt = document.createElement("option");
+
+      opt.value = JSON.stringify({
+        assignment_id: a.assignment_id,
+        class_id: a.class_id
+      });
+
+      opt.textContent = `${a.assignment_id} || ${a.class_id}`;
+
+      dropdown.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error("Assignment load failed:", err);
+
+    dropdown.innerHTML = `<option>Failed to load assignments</option>`;
+  }
+});
+
+/* ================= SEND ASSIGNMENT (FRONTEND ONLY) ================= */
+document.getElementById("sendAssignmentBtn").addEventListener("click", () => {
+  const raw = document.getElementById("assignmentSelect").value;
+
+  if (!raw || raw.includes("Click")) {
+    return alert("Select an assignment first");
+  }
+
+  const parsed = JSON.parse(raw);
+
+  currentAssignmentId = parsed.assignment_id;
+  currentClassId = parsed.class_id;
+
+  document.getElementById("feedbackArea").innerHTML = `
+    <p><b>Assignment selected ✅</b></p>
+    <p>${currentAssignmentId} || ${currentClassId}</p>
+  `;
+});
+
+/* ================= SUBMIT FILE ================= */
+document.getElementById("submitFileBtn").addEventListener("click", async () => {
+  const file = document.getElementById("submissionFile").files[0];
+
+  const raw = document.getElementById("assignmentSelect").value;
+  const parsed = raw && !raw.includes("Click") ? JSON.parse(raw) : null;
+
+  const assignment_id = currentAssignmentId || parsed?.assignment_id;
+  const class_id = currentClassId || parsed?.class_id;
+
+  if (!assignment_id || !class_id) {
+    return alert("Select an assignment first");
+  }
+
+  if (!file) {
+    return alert("Upload a PDF first");
+  }
+
+  const token = await getToken();
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("uid", currentUser.uid);
+
+  // 🔥 CLEAN STRUCTURED DATA
+  formData.append("assignment_id", assignment_id);
+  formData.append("class_id", class_id);
+
+  // optional display/debug label
+  formData.append("assignment_label", `${assignment_id} || ${class_id}`);
+
+  const res = await fetch(SUBMIT_BASE, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token
+    },
+    body: formData
+  });
+
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("RAW RESPONSE:", text);
+    return alert("Server returned invalid JSON");
+  }
+
+  document.getElementById("feedbackArea").innerHTML = `
+    <p><b>File submitted ✅</b></p>
+    <p><b>Assignment:</b> ${assignment_id} || ${class_id}</p>
+    <p><b>Total:</b> ${data.total ?? "N/A"}</p>
+    <p><b>Confidence:</b> ${data.confidence ?? "N/A"}</p>
+    <p><b>Feedback:</b> ${data.feedback ?? "N/A"}</p>
+  `;
+});
+
+/* ================= LOAD GRADES ================= */
+document.getElementById("loadGrades").addEventListener("click", async () => {
+  const token = await getToken();
+
+  const res = await fetch(BASE, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      action: "get_student_grades",
+      uid: currentUser.uid
+    })
+  });
+
+  const text = await res.text();
+  console.log("RAW RESPONSE:", text);
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.error("Invalid JSON:", text);
+    return;
+  }
+
+  // ✅ normalize response (supports object OR array OR {rows})
+  const rows = Array.isArray(data)
+    ? data
+    : (data.rows ? data.rows : [data]);
+
+  const table = document.getElementById("gradesTable");
+
+  // ✅ rebuild header
+  table.innerHTML = `
+    <tr>
+      <th>Assignment</th>
+      <th>Class</th>
+      <th>Score</th>
+      <th>%</th>
+      <th>Confidence</th>
+      <th>Feedback</th>
+    </tr>
+  `;
+
+  rows.forEach(g => {
+    const scored = Number(g.scored ?? 0);
+    const max = Number(g.max_score ?? 0);
+
+    const percent =
+      max > 0
+        ? ((scored / max) * 100).toFixed(1) + "%"
+        : (g.percent !== undefined ? (g.percent * 100).toFixed(1) + "%" : "N/A");
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${g.assignment_id ?? "—"}</td>
+      <td>${g.class_id ?? "—"}</td>
+      <td>${scored} / ${max}</td>
+      <td>${percent}</td>
+      <td>${g.confidence ?? "—"}</td>
+      <td>${g.feedback ?? "—"}</td>
+    `;
+
+    table.appendChild(row);
+  });
+});
+
+function logout() {
+  firebase.auth().signOut()
+    .then(() => {
+      window.location.href = "index.html";
+    })
+    .catch((err) => {
+      console.error("Logout error:", err);
+      alert("Logout failed. Check console.");
+    });
+}
+</script>
+
+</body>
+</html>

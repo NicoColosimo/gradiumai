@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="gradium logo.png">
+  <title>Login</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    #message {
+      color: red;
+    }
+
+    .login-header img {
+      width: 350px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  
+  <div class="login-header">
+    <img src="gradium logo-Picsart-BackgroundRemover.png" class="login-logo">
+    <h2>AI Grader Login</h2>
+  </div>
+
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="handleLogin()">Login</button>
+  <button onclick="handleSignup()">Sign Up</button>
+
+  <p id="message"></p>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDEEc-ioIzOyw5CWHQlC4wCZRSXWCQDaX0",
+  authDomain: "ai-grader-5a3e0.firebaseapp.com",
+  projectId: "ai-grader-5a3e0",
+  storageBucket: "ai-grader-5a3e0.appspot.com",
+  messagingSenderId: "207795562931",
+  appId: "1:207795562931:web:dba8c6e2e3eb9c41d903c6"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// keep users logged in
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+// teacher UID list
+const teacherUIDs = ["OajlDBqbwsWRBtAfEFJzYnIfh9I3"];
+
+
+// ---------------- LOGIN ----------------
+async function handleLogin() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("message");
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    message.style.color = "green";
+    message.innerText = "Login successful! Redirecting...";
+
+    const redirectUrl = teacherUIDs.includes(user.uid)
+      ? "teacher_dashboard.html"
+      : "student_dashboard.html";
+
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 800);
+
+  } catch (err) {
+    message.style.color = "red";
+    message.innerText = err.message;
+  }
+}
+
+
+// ---------------- SIGN UP ----------------
+async function handleSignup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("message");
+
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    message.style.color = "green";
+    message.innerText = "Account created! Redirecting...";
+
+    // default all new users = students
+    setTimeout(() => {
+      window.location.href = "student_dashboard.html";
+    }, 800);
+
+  } catch (err) {
+    message.style.color = "red";
+    message.innerText = err.message;
+  }
+}
+</script>
+
+</body>
+</html>
